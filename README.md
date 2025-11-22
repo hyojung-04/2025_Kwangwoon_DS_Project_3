@@ -8,6 +8,8 @@
 
 ## Update Notes  
 
+- **2025-11-23 (ver.2):** CENTRALITY 예외 처리 사항 추가 ('x' 출력)
+
 ---
 
 ## How to Clone Repository  
