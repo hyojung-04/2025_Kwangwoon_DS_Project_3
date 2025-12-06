@@ -52,7 +52,6 @@ void Manager::run(const char *command_txt) {
       if (!PRINT())
         printErrorCode(200);
     } else if (cmd == "BFS") {
-      fout << "bfs" << endl;
       char option;
       int vertex;
       ss >> option >> vertex;
