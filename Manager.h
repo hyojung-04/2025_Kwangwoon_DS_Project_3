@@ -3,28 +3,28 @@
 
 #include "GraphMethod.h"
 
-class Manager{	
+class Manager {
 private:
-	Graph* graph;	
-	ofstream fout;	
-	int load;
+  Graph *graph;
+  ofstream fout;
+  int load;
 
 public:
-	Manager();	
-	~Manager();	
+  Manager();
+  ~Manager();
 
-	void run(const char * command_txt);
-	
-	bool LOAD(const char* filename);	
-	bool PRINT();	
-	bool mBFS(char option, int vertex);	
-	bool mDFS(char option, int vertex);	
-	bool mDIJKSTRA(char option, int vertex);	
-	bool mKRUSKAL();	
-	bool mBELLMANFORD(char option, int s_vertex, int e_vertex);	
-	bool mFLOYD(char option); 
-	bool mCentrality();
-	void printErrorCode(int n); 
+  void run(const char *command_txt);
+
+  bool LOAD(const char *filename);
+  bool PRINT();
+  bool mBFS(char option, int vertex);
+  bool mDFS(char option, int vertex);
+  bool mDIJKSTRA(char option, int vertex);
+  bool mKRUSKAL();
+  bool mBELLMANFORD(char option, int s_vertex, int e_vertex);
+  bool mFLOYD(char option);
+  bool mCentrality();
+  void printErrorCode(int n);
 };
 
 #endif

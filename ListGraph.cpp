@@ -5,52 +5,53 @@
 using namespace std;
 
 ListGraph::ListGraph(bool type, int size) : Graph(type, size) {
-  // Allocate array of maps
-  // m_List[i] stores edges starting from vertex i (Key: Destination, Value:
-  // Weight)
+  // create array of maps for adjacency list
+  // each map holds: {to : weight}
   m_List = new map<int, int>[size];
 }
 
-ListGraph::~ListGraph() { delete[] m_List; }
+ListGraph::~ListGraph() {
+  // free adjacency list memory
+  delete[] m_List;
+}
 
-// Definition of getAdjacentEdges (No Direction == Undirected)
+// get edges for undirected view
 void ListGraph::getAdjacentEdges(int vertex, map<int, int> *m) {
-  // 1. Get outgoing edges
+  // add outgoing edges
   getAdjacentEdgesDirect(vertex, m);
 
-  // 2. Get incoming edges (Search all other lists to find edges pointing to
-  // 'vertex') This is required for treating a directed graph as undirected
-  // during traversal.
+  // add incoming edges by scanning all lists
   for (int i = 0; i < getSize(); i++) {
     if (i == vertex)
       continue;
 
     auto it = m_List[i].find(vertex);
     if (it != m_List[i].end()) {
-      // Found incoming edge, insert it (Key: Start node 'i', Value: Weight)
+      // add edge pointing to this vertex
       m->insert(make_pair(i, it->second));
     }
   }
 }
 
-// Definition of getAdjacentEdgesDirect (Directed graph)
+// get outgoing edges only (directed view)
 void ListGraph::getAdjacentEdgesDirect(int vertex, map<int, int> *m) {
-  // Copy all outgoing edges from the adjacency list of 'vertex'
+  // copy all outgoing edges of this vertex
   for (auto it = m_List[vertex].begin(); it != m_List[vertex].end(); it++) {
     m->insert(make_pair(it->first, it->second));
   }
 }
 
-// Definition of insertEdge
+// add new edge to adjacency list
 void ListGraph::insertEdge(int from, int to, int weight) {
+  // check range
   if (from < 0 || from >= getSize() || to < 0 || to >= getSize())
     return;
 
-  // Insert into map
+  // store edge in map
   m_List[from][to] = weight;
 }
 
-// Definition of print Graph
+// print adjacency list
 bool ListGraph::printGraph(ofstream *fout) {
   if (getSize() < 0)
     return false;
@@ -60,9 +61,12 @@ bool ListGraph::printGraph(ofstream *fout) {
   for (int i = 0; i < getSize(); i++) {
     *fout << "[" << i << "]";
 
+    if (m_List[i].empty()) {
+      *fout << " ->";
+    }
+
     // Iterate through connected edges
-    // map is automatically sorted by Key (Destination vertex), satisfying the
-    // requirement.
+    // map is automatically sorted by Key (Destination vertex)
     for (auto it = m_List[i].begin(); it != m_List[i].end(); it++) {
       *fout << " -> (" << it->first << "," << it->second << ")";
     }

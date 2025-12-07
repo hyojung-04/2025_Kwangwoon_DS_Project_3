@@ -12,15 +12,15 @@ using namespace std;
 
 Manager::Manager() {
   graph = nullptr;
-  fout.open("log.txt", ios::app); // Open log file
+  fout.open("log.txt", ios::out); // create log file
   load = 0;
 }
 
 Manager::~Manager() {
   if (load)
-    delete graph; // Free memory if graph exists
+    delete graph; // free graph memory
   if (fout.is_open())
-    fout.close(); // Close log file
+    fout.close(); // close log file
 }
 
 void Manager::run(const char *command_txt) {
@@ -38,54 +38,104 @@ void Manager::run(const char *command_txt) {
     string cmd;
     ss >> cmd; // Parse command
 
+    string dump; // Variable to check for extra arguments
+
     if (cmd == "LOAD") {
       string filename;
-      ss >> filename;
-      if (LOAD(filename.c_str())) {
-        fout << "========LOAD========" << endl;
-        fout << "Success" << endl;
-        fout << "====================" << endl << endl;
+      // Check if there is exactly 1 argument (filename) and no extra args
+      if (ss >> filename && !(ss >> dump)) {
+        if (LOAD(filename.c_str())) {
+          fout << "========LOAD========" << endl;
+          fout << "Success" << endl;
+          fout << "====================" << endl << endl;
+        } else {
+          printErrorCode(100); // Load failed
+        }
       } else {
-        printErrorCode(100); // Load failed
+        printErrorCode(100); // Error: Invalid argument count
       }
+
     } else if (cmd == "PRINT") {
-      if (!PRINT())
+      // Check if there are no arguments
+      if (!(ss >> dump)) {
+        if (!PRINT())
+          printErrorCode(200);
+      } else {
         printErrorCode(200);
+      }
+
     } else if (cmd == "BFS") {
       char option;
       int vertex;
-      ss >> option >> vertex;
-      if (!mBFS(option, vertex))
+      // Check if there are exactly 2 arguments
+      if (ss >> option >> vertex && !(ss >> dump)) {
+        if (!mBFS(option, vertex))
+          printErrorCode(300);
+      } else {
         printErrorCode(300);
+      }
+
     } else if (cmd == "DFS") {
       char option;
       int vertex;
-      ss >> option >> vertex;
-      if (!mDFS(option, vertex))
+      // Check if there are exactly 2 arguments
+      if (ss >> option >> vertex && !(ss >> dump)) {
+        if (!mDFS(option, vertex))
+          printErrorCode(400);
+      } else {
         printErrorCode(400);
+      }
+
     } else if (cmd == "KRUSKAL") {
-      if (!mKRUSKAL())
+      // Check if there are no arguments
+      if (!(ss >> dump)) {
+        if (!mKRUSKAL())
+          printErrorCode(500);
+      } else {
         printErrorCode(500);
+      }
+
     } else if (cmd == "DIJKSTRA") {
       char option;
       int vertex;
-      ss >> option >> vertex;
-      if (!mDIJKSTRA(option, vertex))
+      // Check if there are exactly 2 arguments
+      if (ss >> option >> vertex && !(ss >> dump)) {
+        if (!mDIJKSTRA(option, vertex))
+          printErrorCode(600);
+      } else {
         printErrorCode(600);
+      }
+
     } else if (cmd == "BELLMANFORD") {
       char option;
       int s_vertex, e_vertex;
-      ss >> option >> s_vertex >> e_vertex;
-      if (!mBELLMANFORD(option, s_vertex, e_vertex))
+      // Check if there are exactly 3 arguments
+      if (ss >> option >> s_vertex >> e_vertex && !(ss >> dump)) {
+        if (!mBELLMANFORD(option, s_vertex, e_vertex))
+          printErrorCode(700);
+      } else {
         printErrorCode(700);
+      }
+
     } else if (cmd == "FLOYD") {
       char option;
-      ss >> option;
-      if (!mFLOYD(option))
+      // Check if there is exactly 1 argument
+      if (ss >> option && !(ss >> dump)) {
+        if (!mFLOYD(option))
+          printErrorCode(800);
+      } else {
         printErrorCode(800);
+      }
+
     } else if (cmd == "CENTRALITY") {
-      if (!mCentrality())
+      // Check if there are no arguments
+      if (!(ss >> dump)) {
+        if (!mCentrality())
+          printErrorCode(900);
+      } else {
         printErrorCode(900);
+      }
+
     } else if (cmd == "EXIT") {
       fout << "========EXIT========" << endl;
       fout << "Success" << endl;
@@ -98,7 +148,7 @@ void Manager::run(const char *command_txt) {
 }
 
 bool Manager::LOAD(const char *filename) {
-  // 1. Delete existing graph
+  // delete previous graph
   if (graph != nullptr) {
     delete graph;
     graph = nullptr;
@@ -106,28 +156,27 @@ bool Manager::LOAD(const char *filename) {
   }
 
   ifstream file(filename);
-  if (!file.is_open()) {
-    return false; // File open failed
-  }
+  if (!file.is_open())
+    return false;
 
   char type;
   int size;
 
-  // Read graph type and size
+  // read graph type and size
   if (!(file >> type >> size)) {
     file.close();
     return false;
   }
 
+  // load list-based graph
   if (type == 'L') {
-    graph = new ListGraph(type, size); // Create ListGraph
+    graph = new ListGraph(type, size);
 
     string line;
-    getline(file, line); // Skip newline after size
+    getline(file, line); // skip newline
+    int currentSrc = -1;
 
-    int currentSrc = -1; // Current source vertex
-
-    // Read line by line
+    // read adjacency list format
     while (getline(file, line)) {
       if (line.empty())
         continue;
@@ -136,59 +185,54 @@ bool Manager::LOAD(const char *filename) {
       int temp;
       vector<int> nums;
 
-      // Parse numbers from the line
-      while (ss >> temp) {
+      while (ss >> temp)
         nums.push_back(temp);
-      }
 
       if (nums.size() == 1) {
-        // Single number indicates a new source vertex
+        // new source vertex
         currentSrc = nums[0];
       } else if (nums.size() == 2) {
-        // Two numbers indicate destination and weight
+        // destination + weight
         if (currentSrc != -1) {
-          // **FIXED: Changed insert to insertEdge**
           graph->insertEdge(currentSrc, nums[0], nums[1]);
         }
       }
     }
 
+    // load matrix-based graph
   } else if (type == 'M') {
-    graph = new MatrixGraph(type, size); // Create MatrixGraph
+    graph = new MatrixGraph(type, size);
     int weight;
 
-    // Read matrix data
     for (int i = 0; i < size; i++) {
       for (int j = 0; j < size; j++) {
         if (!(file >> weight))
           break;
 
-        if (weight != 0) { // Add edge if weight is not 0
-          // **FIXED: Changed insert to insertEdge**
+        if (weight != 0) {
           graph->insertEdge(i, j, weight);
         }
       }
     }
+
   } else {
     file.close();
-    return false; // Invalid graph type
+    return false; // invalid graph type
   }
 
   file.close();
-  load = 1; // Load successful
+  load = 1;
   return true;
 }
 
 bool Manager::PRINT() {
   if (graph == nullptr)
-    return false; // Graph not loaded
+    return false;
 
-  // **FIXED: Changed print to printGraph and passed address of fout**
-  // MatrixGraph implementation already prints header/footer, so we just call
-  // it.
-  if (graph->printGraph(&fout)) {
+  // print using each graph's own print function
+  if (graph->printGraph(&fout))
     return true;
-  }
+
   return false;
 }
 
@@ -196,9 +240,8 @@ bool Manager::mBFS(char option, int vertex) {
   if (graph == nullptr)
     return false;
 
-  fout << "========BFS========" << endl;
-  // Call BFS algorithm
-  if (BFS(graph, option, vertex)) {
+  // Pass &fout
+  if (BFS(graph, option, vertex, &fout)) {
     fout << "===================" << endl << endl;
     return true;
   }
@@ -209,9 +252,8 @@ bool Manager::mDFS(char option, int vertex) {
   if (graph == nullptr)
     return false;
 
-  fout << "========DFS========" << endl;
-  // Call DFS algorithm
-  if (DFS(graph, option, vertex)) {
+  // Pass &fout
+  if (DFS(graph, option, vertex, &fout)) {
     fout << "===================" << endl << endl;
     return true;
   }
@@ -221,10 +263,10 @@ bool Manager::mDFS(char option, int vertex) {
 bool Manager::mDIJKSTRA(char option, int vertex) {
   if (graph == nullptr)
     return false;
-
   fout << "========DIJKSTRA========" << endl;
-  // Call Dijkstra algorithm
-  if (Dijkstra(graph, option, vertex)) {
+
+  // Pass &fout
+  if (Dijkstra(graph, option, vertex, &fout)) {
     fout << "========================" << endl << endl;
     return true;
   }
@@ -234,10 +276,10 @@ bool Manager::mDIJKSTRA(char option, int vertex) {
 bool Manager::mKRUSKAL() {
   if (graph == nullptr)
     return false;
-
   fout << "========KRUSKAL========" << endl;
-  // Call Kruskal algorithm
-  if (Kruskal(graph)) {
+
+  // Pass &fout
+  if (Kruskal(graph, &fout)) {
     fout << "=======================" << endl << endl;
     return true;
   }
@@ -247,10 +289,10 @@ bool Manager::mKRUSKAL() {
 bool Manager::mBELLMANFORD(char option, int s_vertex, int e_vertex) {
   if (graph == nullptr)
     return false;
-
   fout << "========BELLMANFORD========" << endl;
-  // Call Bellman-Ford algorithm
-  if (Bellmanford(graph, option, s_vertex, e_vertex)) {
+
+  // Pass &fout
+  if (Bellmanford(graph, option, s_vertex, e_vertex, &fout)) {
     fout << "===========================" << endl << endl;
     return true;
   }
@@ -260,10 +302,10 @@ bool Manager::mBELLMANFORD(char option, int s_vertex, int e_vertex) {
 bool Manager::mFLOYD(char option) {
   if (graph == nullptr)
     return false;
-
   fout << "========FLOYD========" << endl;
-  // Call Floyd algorithm
-  if (FLOYD(graph, option)) {
+
+  // Pass &fout
+  if (FLOYD(graph, option, &fout)) {
     fout << "=====================" << endl << endl;
     return true;
   }
@@ -273,10 +315,10 @@ bool Manager::mFLOYD(char option) {
 bool Manager::mCentrality() {
   if (graph == nullptr)
     return false;
-
   fout << "========CENTRALITY========" << endl;
-  // Call Centrality algorithm
-  if (Centrality(graph)) {
+
+  // Pass &fout
+  if (Centrality(graph, &fout)) {
     fout << "==========================" << endl << endl;
     return true;
   }
@@ -284,7 +326,7 @@ bool Manager::mCentrality() {
 }
 
 void Manager::printErrorCode(int n) {
-  fout << "========ERROR========" << endl;
-  fout << n << endl; // Print error code
-  fout << "=====================" << endl << endl;
+  fout << "========ERROR========\n";
+  fout << n << "\n";
+  fout << "=====================\n\n";
 }
